@@ -41,7 +41,6 @@ __pycache__/
 *.env
 
 # Data files
-*.csv
 *.db
 *.sqlite
 *.sqlite3
