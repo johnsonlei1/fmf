@@ -77,7 +77,7 @@ const Login = () => {
               onClick={signInWithEmail}
               disabled={authing}
             >
-              Log In With Email and Password
+              Log In
             </button>
           </div>
 

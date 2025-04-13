@@ -35,14 +35,26 @@ def get_item(item_id):
 @app.route('/api/search', methods=['GET'])
 def search_by_city():
     city = request.args.get('city', '')
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    
     if not city:
         return jsonify({"error": "City parameter is required"}), 400
     
     data = read_csv_data('food.csv')
     # Filter restaurants by city (case-insensitive)
-    results = [item for item in data if city.lower() in item.get('city', '').lower()]
+    filtered_results = [item for item in data if city.lower() in item.get('city', '').lower()]
+
+    start = (page - 1) * limit
+    end = start + limit
+    paginated_results = filtered_results[start:end]
     
-    return jsonify(results)
+    return jsonify({
+        "results": paginated_results,
+        "total": len(filtered_results),
+        "page": page,
+        "limit": limit
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

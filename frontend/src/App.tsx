@@ -15,11 +15,16 @@ interface Restaurant {
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [starFilter, setStarFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1); // Track the current page
+  const [totalResults, setTotalResults] = useState(0); // Track total results
+  const resultsPerPage = 20; // Number of results per page
 
-  const handleSearch = async () => {
+  const handleSearch = async (page = 1) => {
     if (!searchTerm.trim()) {
       setError("Please enter a city name");
       return;
@@ -29,14 +34,16 @@ const App = () => {
     setError("");
     try {
       const response = await fetch(
-        `http://localhost:5000/api/search?city=${searchTerm}`
+        `http://localhost:5000/api/search?city=${searchTerm}&page=${page}&limit=${resultsPerPage}&stars=${starFilter}&category=${categoryFilter}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch results");
       }
       const data = await response.json();
-      setRestaurants(data);
-      if (data.length === 0) {
+      setRestaurants(data.results);
+      setTotalResults(data.total);
+      setCurrentPage(data.page);
+      if (data.results.length === 0) {
         setError(`No restaurants found in ${searchTerm}`);
       }
     } catch (err) {
@@ -47,16 +54,25 @@ const App = () => {
     }
   };
 
+  const handleNextPage = () => {
+    if (currentPage * resultsPerPage < totalResults) {
+      handleSearch(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      handleSearch(currentPage - 1);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-[#1a1a1a] relative">
-      {/* Navbar absolutely positioned at the top */}
       <Navbar />
-      {/* Main content centered */}
       <div className="w-full flex items-center justify-center px-4 pt-20 pb-10">
         <div className="flex flex-col w-full max-w-[800px] text-white items-center">
           <h3 className="text-4xl font-bold mb-10">Are You Hungry?</h3>
 
-          {/* Input field */}
           <div className="w-full flex flex-col mb-6">
             <input
               type="text"
@@ -68,10 +84,10 @@ const App = () => {
             />
           </div>
 
-          {/* Search button */}
+          
           <div className="w-full flex flex-col mb-4">
             <button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={loading}
               className="w-full bg-transparent border border-white text-white my-2 font-semibold rounded-md p-4 text-center flex items-center justify-center cursor-pointer hover:bg-white hover:text-[#1a1a1a] transition-colors"
             >
@@ -79,10 +95,8 @@ const App = () => {
             </button>
           </div>
 
-          {/* Error message */}
           {error && <div className="text-red-400 mb-4">{error}</div>}
 
-          {/* Results */}
           {restaurants.length > 0 && (
             <div className="w-full mt-8">
               <h4 className="text-2xl font-bold mb-4">
@@ -112,6 +126,27 @@ const App = () => {
                     </p>
                   </div>
                 ))}
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex justify-between mt-6">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className="bg-transparent border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1a1a1a] transition-colors"
+                >
+                  Previous
+                </button>
+                <span className="text-gray-400">
+                  Page {currentPage} of {Math.ceil(totalResults / resultsPerPage)}
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage * resultsPerPage >= totalResults}
+                  className="bg-transparent border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1a1a1a] transition-colors"
+                >
+                  Next
+                </button>
               </div>
             </div>
           )}
