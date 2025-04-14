@@ -18,6 +18,7 @@ const App = () => {
   const [starFilter, setStarFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [favorites, setFavorites] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1); // Track the current page
@@ -54,6 +55,19 @@ const App = () => {
     }
   };
 
+  const toggleFavorite = (restaurant: Restaurant) => {
+    setFavorites((prevFavorites) => {
+      const isFavorited = prevFavorites.some((fav) => fav.name === restaurant.name);
+      if (isFavorited) {
+        // Remove from favorites
+        return prevFavorites.filter((fav) => fav.name !== restaurant.name);
+      } else {
+        // Add to favorites
+        return [...prevFavorites, restaurant];
+      }
+    });
+  };
+
   const handleNextPage = () => {
     if (currentPage * resultsPerPage < totalResults) {
       handleSearch(currentPage + 1);
@@ -83,6 +97,39 @@ const App = () => {
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
+          <div className="w-full flex flex-row gap-4 mb-6">
+
+          <div className="flex-1">
+            <select
+              className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
+              value={starFilter}
+              onChange={(e) => setStarFilter(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            >
+              <option value="">All Ratings</option>
+              <option value={1}>★ and up</option>
+              <option value={2}>★★ and up</option>
+              <option value={3}>★★★ and up</option>
+              <option value={4}>★★★★ and up</option>
+              <option value={5}>★★★★★ only</option>
+            </select>
+          </div>
+
+          <div className="flex-1">
+            <select
+              className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            >
+              <option value="">All Categories</option>
+              <option value="Italian">Italian</option>
+              <option value="Chinese">Chinese</option>
+              <option value="Mexican">Mexican</option>
+              <option value="Indian">Indian</option>
+            </select>
+          </div>
+        </div>
 
           
           <div className="w-full flex flex-col mb-4">
@@ -106,7 +153,7 @@ const App = () => {
                 {restaurants.map((restaurant, index) => (
                   <div
                     key={index}
-                    className="border border-gray-700 rounded-md p-4 hover:border-white transition-colors"
+                    className="border border-gray-700 rounded-md p-4 hover:border-white transition-colors relative"
                   >
                     <h5 className="text-xl font-bold">{restaurant.name}</h5>
                     <div className="flex items-center mt-2">
@@ -124,6 +171,18 @@ const App = () => {
                     <p className="mt-2 text-gray-400">
                       {restaurant.categories}
                     </p>
+
+                    {/* Heart Icon */}
+                    <div
+                      onClick={() => toggleFavorite(restaurant)}
+                      className="absolute top-4 right-4 cursor-pointer"
+                    >
+                      {favorites.some((fav) => fav.name === restaurant.name) ? (
+                        <span className="text-red-500 text-2xl">❤️</span> // Filled heart
+                      ) : (
+                        <span className="text-gray-500 text-2xl">🤍</span> // Hollow heart
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
