@@ -44,7 +44,10 @@ To Run:
 ```
 cd backend
 python app.py
-cd ..
+```
+
+Now, in a second terminal:
+```
 cd frontend
 npm run dev
 ```
