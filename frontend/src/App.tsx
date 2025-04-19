@@ -58,35 +58,28 @@ const App = () => {
   
     try {
       console.log("🟢 #1!");
-    
-      const userRef = doc(db, "users", user.uid);
-    
-      const serializedFavorites = favorites.map((fav) => ({
-        name: fav.name,
-        address: fav.address,
-        city: fav.city,
-        state: fav.state,
-        postal_code: fav.postal_code,
-        stars: fav.stars,
-        review_count: fav.review_count,
-        categories: fav.categories,
-        hours: fav.hours,
+  
+      // ✅ Serialize favorites before writing
+      const serializedFavorites = favorites.map(({ name, address, city, state, postal_code, stars, review_count, categories, hours }) => ({
+        name, address, city, state, postal_code, stars, review_count, categories, hours
       }));
-    
+  
       console.log("📦 Saving this to Firestore:", serializedFavorites);
+  
+      const userRef = doc(db, "users", user.uid);
       console.log("📍 Writing to doc:", userRef.path);
-    
+  
       await setDoc(userRef, { favorites: serializedFavorites }, { merge: true });
-    
-      console.log("🟢 #2!");
+  
+      console.log("✅ Success: Favorites saved");
       alert("Favorites saved!");
     } catch (err) {
-      console.log("🟢 #3!");
-      console.error("🔥 Firestore save failed:", err);
-      alert("Failed to save favorites.");
+      console.log("🟠 Error while saving");
+      console.error("❌ Firestore Save Failed:", err);
+      //alert("Failed to save favorites.");
     }
-    
   };
+  
   
 
   const handleSearch = async (page = 1) => {
