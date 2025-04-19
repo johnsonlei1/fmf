@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 
-//firebase imports to store favorites
+// Firebase imports
 import { db, auth } from "./firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -48,40 +48,42 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
-  const saveFavoritesToFirestore = async () => {
+  const toggleFavorite = async (restaurant: Restaurant) => {
     const user = auth.currentUser;
     if (!user) {
-      alert("Please log in to save favorites.");
+      alert("Please log in to favorite restaurants.");
       return;
     }
-  
-    try {
-      const serializedFavorites = favorites.map(
+
+    const userRef = doc(db, "users", user.uid);
+
+    setFavorites((prevFavorites) => {
+      const isFavorited = prevFavorites.some(
+        (fav) => fav.name === restaurant.name
+      );
+      let updatedFavorites;
+
+      if (isFavorited) {
+        updatedFavorites = prevFavorites.filter(
+          (fav) => fav.name !== restaurant.name
+        );
+      } else {
+        updatedFavorites = [...prevFavorites, restaurant];
+      }
+
+      const serializedFavorites = updatedFavorites.map(
         ({ name, address, city, state, postal_code, stars, review_count, categories, hours }) => ({
-          name,
-          address,
-          city,
-          state,
-          postal_code,
-          stars,
-          review_count,
-          categories,
-          hours,
+          name, address, city, state, postal_code, stars, review_count, categories, hours
         })
       );
-  
-      const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, { favorites: serializedFavorites }, { merge: true });
-  
-      alert("Favorites saved!");
-    } catch (err) {
-      console.error("Error saving favorites to Firestore:", err);
-      alert("Failed to save favorites.");
-    }
+
+      setDoc(userRef, { favorites: serializedFavorites }, { merge: true }).catch((err) => {
+        console.error("❌ Failed to sync favorites:", err);
+      });
+
+      return updatedFavorites;
+    });
   };
-  
-  
-  
 
   const handleSearch = async (page = 1) => {
     if (!searchTerm.trim()) {
@@ -111,19 +113,6 @@ const App = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleFavorite = (restaurant: Restaurant) => {
-    setFavorites((prevFavorites) => {
-      const isFavorited = prevFavorites.some(
-        (fav) => fav.name === restaurant.name
-      );
-      if (isFavorited) {
-        return prevFavorites.filter((fav) => fav.name !== restaurant.name);
-      } else {
-        return [...prevFavorites, restaurant];
-      }
-    });
   };
 
   const handleNextPage = () => {
@@ -220,8 +209,8 @@ const App = () => {
                       </span>
                     </div>
                     <p className="mt-2 text-gray-300">
-                      {restaurant.address}, {restaurant.city},{" "}
-                      {restaurant.state} {restaurant.postal_code}
+                      {restaurant.address}, {restaurant.city}, {restaurant.state}{" "}
+                      {restaurant.postal_code}
                     </p>
                     <p className="mt-2 text-gray-400">
                       {restaurant.categories}
@@ -232,9 +221,7 @@ const App = () => {
                       onClick={() => toggleFavorite(restaurant)}
                       className="absolute top-4 right-4 cursor-pointer"
                     >
-                      {favorites.some(
-                        (fav) => fav.name === restaurant.name
-                      ) ? (
+                      {favorites.some((fav) => fav.name === restaurant.name) ? (
                         <span className="text-red-500 text-2xl">❤️</span>
                       ) : (
                         <span className="text-gray-500 text-2xl">🤍</span>
@@ -267,16 +254,6 @@ const App = () => {
             </div>
           )}
         </div>
-      </div>
-
-      {/* ✅ Save Favorites Button */}
-      <div className="fixed bottom-5 right-5 z-50">
-        <button
-          onClick={saveFavoritesToFirestore}
-          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-        >
-          Save Favorites
-        </button>
       </div>
     </div>
   );
