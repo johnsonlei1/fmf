@@ -12,7 +12,6 @@ import {
 } from "react-router-dom";
 import { initializeApp } from "firebase/app";
 import Profile from "./Profile.tsx";
-import Donation from "./Donation.tsx";
 // Import the functions you need from the SDKs you need
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -39,7 +38,6 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/Login" element={<Login />} />
         <Route path="/Profile" element={<Profile />} />
         <Route path="/app" element={<App />} />
-        <Route path="/Donation" element={<Donation />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 
+//firebase imports to store favorites
+import { db, auth } from "./firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+
 interface Restaurant {
   name: string;
   address: string;
@@ -21,9 +26,68 @@ const App = () => {
   const [favorites, setFavorites] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1); // Track the current page
-  const [totalResults, setTotalResults] = useState(0); // Track total results
-  const resultsPerPage = 20; // Number of results per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const resultsPerPage = 20;
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setFavorites(data.favorites || []);
+      } else {
+        await setDoc(userRef, { favorites: [] });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const saveFavoritesToFirestore = async () => {
+    console.log("🟢 #0!");
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please log in to save favorites.");
+      return;
+    }
+  
+    try {
+      console.log("🟢 #1!");
+    
+      const userRef = doc(db, "users", user.uid);
+    
+      const serializedFavorites = favorites.map((fav) => ({
+        name: fav.name,
+        address: fav.address,
+        city: fav.city,
+        state: fav.state,
+        postal_code: fav.postal_code,
+        stars: fav.stars,
+        review_count: fav.review_count,
+        categories: fav.categories,
+        hours: fav.hours,
+      }));
+    
+      console.log("📦 Saving this to Firestore:", serializedFavorites);
+      console.log("📍 Writing to doc:", userRef.path);
+    
+      await setDoc(userRef, { favorites: serializedFavorites }, { merge: true });
+    
+      console.log("🟢 #2!");
+      alert("Favorites saved!");
+    } catch (err) {
+      console.log("🟢 #3!");
+      console.error("🔥 Firestore save failed:", err);
+      alert("Failed to save favorites.");
+    }
+    
+  };
+  
 
   const handleSearch = async (page = 1) => {
     if (!searchTerm.trim()) {
@@ -57,12 +121,12 @@ const App = () => {
 
   const toggleFavorite = (restaurant: Restaurant) => {
     setFavorites((prevFavorites) => {
-      const isFavorited = prevFavorites.some((fav) => fav.name === restaurant.name);
+      const isFavorited = prevFavorites.some(
+        (fav) => fav.name === restaurant.name
+      );
       if (isFavorited) {
-        // Remove from favorites
         return prevFavorites.filter((fav) => fav.name !== restaurant.name);
       } else {
-        // Add to favorites
         return [...prevFavorites, restaurant];
       }
     });
@@ -97,41 +161,38 @@ const App = () => {
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
+
           <div className="w-full flex flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <select
+                className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
+                value={starFilter}
+                onChange={(e) => setStarFilter(e.target.value)}
+              >
+                <option value="">All Ratings</option>
+                <option value="1">★ and up</option>
+                <option value="2">★★ and up</option>
+                <option value="3">★★★ and up</option>
+                <option value="4">★★★★ and up</option>
+                <option value="5">★★★★★ only</option>
+              </select>
+            </div>
 
-          <div className="flex-1">
-            <select
-              className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
-              value={starFilter}
-              onChange={(e) => setStarFilter(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            >
-              <option value="">All Ratings</option>
-              <option value={1}>★ and up</option>
-              <option value={2}>★★ and up</option>
-              <option value={3}>★★★ and up</option>
-              <option value={4}>★★★★ and up</option>
-              <option value={5}>★★★★★ only</option>
-            </select>
+            <div className="flex-1">
+              <select
+                className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                <option value="Italian">Italian</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Mexican">Mexican</option>
+                <option value="Indian">Indian</option>
+              </select>
+            </div>
           </div>
 
-          <div className="flex-1">
-            <select
-              className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            >
-              <option value="">All Categories</option>
-              <option value="Italian">Italian</option>
-              <option value="Chinese">Chinese</option>
-              <option value="Mexican">Mexican</option>
-              <option value="Indian">Indian</option>
-            </select>
-          </div>
-        </div>
-
-          
           <div className="w-full flex flex-col mb-4">
             <button
               onClick={() => handleSearch()}
@@ -177,10 +238,12 @@ const App = () => {
                       onClick={() => toggleFavorite(restaurant)}
                       className="absolute top-4 right-4 cursor-pointer"
                     >
-                      {favorites.some((fav) => fav.name === restaurant.name) ? (
-                        <span className="text-red-500 text-2xl">❤️</span> // Filled heart
+                      {favorites.some(
+                        (fav) => fav.name === restaurant.name
+                      ) ? (
+                        <span className="text-red-500 text-2xl">❤️</span>
                       ) : (
-                        <span className="text-gray-500 text-2xl">🤍</span> // Hollow heart
+                        <span className="text-gray-500 text-2xl">🤍</span>
                       )}
                     </div>
                   </div>
@@ -210,6 +273,16 @@ const App = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ✅ Save Favorites Button */}
+      <div className="fixed bottom-5 right-5 z-50">
+        <button
+          onClick={saveFavoritesToFirestore}
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+        >
+          Save Favorites
+        </button>
       </div>
     </div>
   );
