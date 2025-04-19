@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
+import RestaurantCard from "./components/RestaurantCard";
 
 // Firebase imports
 import { db, auth } from "./firebase";
@@ -195,39 +196,15 @@ const App = () => {
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {restaurants.map((restaurant, index) => (
-                  <div
+                  <RestaurantCard
                     key={index}
-                    className="border border-gray-700 rounded-md p-4 hover:border-white transition-colors relative"
-                  >
-                    <h5 className="text-xl font-bold">{restaurant.name}</h5>
-                    <div className="flex items-center mt-2">
-                      <span className="text-yellow-400">
-                        {restaurant.stars} ★
-                      </span>
-                      <span className="ml-2 text-gray-400">
-                        ({restaurant.review_count} reviews)
-                      </span>
-                    </div>
-                    <p className="mt-2 text-gray-300">
-                      {restaurant.address}, {restaurant.city}, {restaurant.state}{" "}
-                      {restaurant.postal_code}
-                    </p>
-                    <p className="mt-2 text-gray-400">
-                      {restaurant.categories}
-                    </p>
-
-                    {/* Heart Icon */}
-                    <div
-                      onClick={() => toggleFavorite(restaurant)}
-                      className="absolute top-4 right-4 cursor-pointer"
-                    >
-                      {favorites.some((fav) => fav.name === restaurant.name) ? (
-                        <span className="text-red-500 text-2xl">❤️</span>
-                      ) : (
-                        <span className="text-gray-500 text-2xl">🤍</span>
-                      )}
-                    </div>
-                  </div>
+                    restaurant={restaurant}
+                    isFavorite={favorites.some(
+                      (fav) => fav.name === restaurant.name
+                    )}
+                    onToggleFavorite={toggleFavorite}
+                    darkMode={true}
+                  />
                 ))}
               </div>
 

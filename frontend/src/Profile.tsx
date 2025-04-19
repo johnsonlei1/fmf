@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import RestaurantCard from "./components/RestaurantCard";
 
 interface Restaurant {
   name: string;
@@ -45,6 +46,46 @@ function Profile() {
 
   const handleLogout = () => {
     navigate("/Login");
+  };
+
+  const toggleFavorite = async (restaurant: Restaurant) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please log in to manage favorites.");
+      return;
+    }
+
+    const userRef = doc(db, "users", user.uid);
+
+    setFavorites((prevFavorites) => {
+      const isFavorited = prevFavorites.some(
+        (fav) => fav.name === restaurant.name
+      );
+      let updatedFavorites;
+
+      if (isFavorited) {
+        // Remove from favorites
+        updatedFavorites = prevFavorites.filter(
+          (fav) => fav.name !== restaurant.name
+        );
+      } else {
+        // Add to favorites (not needed in this case, but keeping for consistency)
+        updatedFavorites = [...prevFavorites, restaurant];
+      }
+
+      // Update Firestore
+      const serializedFavorites = updatedFavorites.map(
+        ({ name, address, city, state, postal_code, stars, review_count, categories, hours }) => ({
+          name, address, city, state, postal_code, stars, review_count, categories, hours
+        })
+      );
+
+      setDoc(userRef, { favorites: serializedFavorites }, { merge: true }).catch((err) => {
+        console.error("❌ Failed to sync favorites:", err);
+      });
+
+      return updatedFavorites;
+    });
   };
 
   return (
@@ -120,26 +161,13 @@ function Profile() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {favorites.map((fav, idx) => (
-                    <div
+                    <RestaurantCard
                       key={idx}
-                      className={`border rounded-md p-4 ${
-                        darkMode
-                          ? "border-gray-700 hover:border-white"
-                          : "border-gray-300 hover:border-black"
-                      } transition-colors`}
-                    >
-                      <h5 className="text-xl font-bold">{fav.name}</h5>
-                      <div className="flex items-center mt-2">
-                        <span className="text-yellow-400">{fav.stars} ★</span>
-                        <span className="ml-2 text-gray-400">
-                          ({fav.review_count} reviews)
-                        </span>
-                      </div>
-                      <p className="mt-2 text-gray-300">
-                        {fav.address}, {fav.city}, {fav.state} {fav.postal_code}
-                      </p>
-                      <p className="mt-2 text-gray-400">{fav.categories}</p>
-                    </div>
+                      restaurant={fav}
+                      isFavorite={true} // Always true for favorites
+                      onToggleFavorite={toggleFavorite}
+                      darkMode={darkMode}
+                    />
                   ))}
                 </div>
               )}
