@@ -36,20 +36,24 @@ def get_item(item_id):
 def search_by_city():
     city = request.args.get('city', '')
     stars = request.args.get('stars', '')  # optional
+    category = request.args.get('category', '').lower()  # optional
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 20))
 
-    print(f"🔍 Search triggered: city='{city}', stars='{stars}', page={page}, limit={limit}")
+    print(f"🔍 Search triggered: city='{city}', stars='{stars}', category='{category}', page={page}, limit={limit}")
 
     if not city:
         return jsonify({"error": "City parameter is required"}), 400
 
     data = read_csv_data('food.csv')
 
-    # Filter by city (case-insensitive)
-    filtered_results = [item for item in data if city.lower() in item.get('city', '').lower()]
+    # Filter by city
+    filtered_results = [
+        item for item in data
+        if city.lower() in item.get('city', '').lower()
+    ]
 
-    # Filter by stars if provided
+    # Filter by stars
     if stars:
         try:
             min_stars = float(stars)
@@ -58,7 +62,14 @@ def search_by_city():
                 if float(item.get('stars', 0)) >= min_stars
             ]
         except ValueError:
-            pass  # If 'stars' isn't a valid number, skip the filter
+            print("⚠️ Invalid 'stars' filter value — skipping stars filter.")
+
+    # Filter by category
+    if category:
+        filtered_results = [
+            item for item in filtered_results
+            if category in item.get('categories', '').lower()
+        ]
 
     # Pagination
     start = (page - 1) * limit
@@ -71,6 +82,7 @@ def search_by_city():
         "page": page,
         "limit": limit
     })
+
 
 
 if __name__ == '__main__':
