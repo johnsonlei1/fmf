@@ -1,4 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+// src/Context/ThemeContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -8,28 +12,46 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [darkMode, setDarkMode] = useState(() => {
-    // Load the initial state from localStorage (if available)
-    const savedMode = localStorage.getItem("darkMode");
-    return savedMode === "true";
-  });
+  const [darkMode, setDarkMode] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const toggleDarkMode = () => {
-    setDarkMode((prevMode) => {
-      const newMode = !prevMode;
-      localStorage.setItem("darkMode", newMode.toString()); // Save to localStorage
-      return newMode;
-    });
-  };
-
-  // Apply the dark mode class to the body element
+  // Get darkMode preference from Firestore once authenticated
   useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add("dark");
-    } else {
-      document.body.classList.remove("dark");
-    }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+        const userRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          console.log("🌙 Fetched dark mode from Firestore:", data.darkMode);
+          if (typeof data.darkMode === "boolean") {
+            setDarkMode(data.darkMode);
+          }
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Update dark mode on the document body
+  useEffect(() => {
+    document.body.classList.toggle("dark", darkMode);
   }, [darkMode]);
+
+  const toggleDarkMode = async () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    if (userId) {
+      try {
+        const userRef = doc(db, "users", userId);
+        await setDoc(userRef, { darkMode: newMode }, { merge: true });
+        console.log("✅ Saved darkMode to Firestore:", newMode);
+      } catch (err) {
+        console.error("❌ Failed to save dark mode preference:", err);
+      }
+    }
+  };
 
   return (
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
