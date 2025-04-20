@@ -15,6 +15,18 @@ def read_csv_data(file_path):
         print(f"Error reading CSV: {e}")
         return []
 
+@app.route('/api/categories', methods=['GET'])
+def get_unique_categories():
+    data = read_csv_data('food.csv')
+    categories = set()
+    for item in data:
+        raw = item.get('categories', '')
+        for cat in raw.split(','):
+            clean = cat.strip().lower()
+            if clean:
+                categories.add(clean)
+    return jsonify(sorted(categories))
+
 # API endpoint to get all data from CSV
 @app.route('/api/data', methods=['GET'])
 def get_data():
