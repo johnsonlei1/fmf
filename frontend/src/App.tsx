@@ -142,7 +142,7 @@ const App = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for a city..."
-              className={`w-full py-2 mb-4 bg-transparent border-b border-gray-500 focus:outline-none focus:border-white ${darkMode ? "text-white" : "text-[#1a1a1a]"}`}
+              className={`w-full py-2 mb-4 bg-transparent border-b border-gray-500 focus:outline-none ${darkMode ? "focus:border-white text-white" : "focus:border-[#1a1a1a] text-[#1a1a1a]"}`}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
