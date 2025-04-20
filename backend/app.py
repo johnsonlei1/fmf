@@ -4,7 +4,7 @@ from flask_cors import CORS
 import pandas as pd
 
 app = Flask(__name__)
-CORS(app)  # This enables CORS for all routes
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 
 # Function to read data from CSV file
 def read_csv_data(file_path):
@@ -57,4 +57,4 @@ def search_by_city():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
