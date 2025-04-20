@@ -1,54 +1,53 @@
-# React + TypeScript + Vite
+Begin by having python and node.js installed
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+1. move into "backend" directory
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```
+cd backend
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. set up the virtual environment
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```
+python -m venv venv
+venv\Scripts\activate
+```
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+3. install backend requirements
+
+```
+pip install flask flask-cors pandas python-dotenv
+```
+
+4. Install frontend dependencies
+
+```
+cd..
+cd frontend
+npm install
+```
+
+5. Create a .env file in the frontend directory
+
+```
+VITE_FIREBASE_API_KEY=apiKey
+VITE_FIREBASE_AUTH_DOMAIN=authDomain
+VITE_FIREBASE_PROJECT_ID=projectId
+VITE_FIREBASE_STORAGE_BUCKET=storageBucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=messagingSenderId
+VITE_FIREBASE_APP_ID=appId
+VITE_FIREBASE_MEASUREMENT_ID=measurementId
+```
+
+To Run:
+
+```
+cd backend
+python app.py
+```
+
+Now, in a second terminal:
+```
+cd frontend
+npm run dev
 ```
