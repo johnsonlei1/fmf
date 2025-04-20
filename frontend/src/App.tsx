@@ -6,7 +6,7 @@ import { useTheme } from "./Context/ThemeContext";
 import { db, auth } from "./firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { Restaurant } from "./components/types";
+import { Restaurant } from "./components/RestaurantCard";
 
 const App = () => {
   const { darkMode } = useTheme();
