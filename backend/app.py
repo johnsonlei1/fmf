@@ -35,26 +35,43 @@ def get_item(item_id):
 @app.route('/api/search', methods=['GET'])
 def search_by_city():
     city = request.args.get('city', '')
+    stars = request.args.get('stars', '')  # optional
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 20))
-    
+
+    print(f"🔍 Search triggered: city='{city}', stars='{stars}', page={page}, limit={limit}")
+
     if not city:
         return jsonify({"error": "City parameter is required"}), 400
-    
+
     data = read_csv_data('food.csv')
-    # Filter restaurants by city (case-insensitive)
+
+    # Filter by city (case-insensitive)
     filtered_results = [item for item in data if city.lower() in item.get('city', '').lower()]
 
+    # Filter by stars if provided
+    if stars:
+        try:
+            min_stars = float(stars)
+            filtered_results = [
+                item for item in filtered_results
+                if float(item.get('stars', 0)) >= min_stars
+            ]
+        except ValueError:
+            pass  # If 'stars' isn't a valid number, skip the filter
+
+    # Pagination
     start = (page - 1) * limit
     end = start + limit
     paginated_results = filtered_results[start:end]
-    
+
     return jsonify({
         "results": paginated_results,
         "total": len(filtered_results),
         "page": page,
         "limit": limit
     })
+
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000)
