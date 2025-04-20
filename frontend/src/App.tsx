@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import RestaurantCard from "./components/RestaurantCard";
-
+import { useTheme } from "./Context/ThemeContext";
 // Firebase imports
 import { db, auth } from "./firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -20,6 +20,7 @@ interface Restaurant {
 }
 
 const App = () => {
+  const { darkMode } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [starFilter, setStarFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -129,10 +130,10 @@ const App = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#1a1a1a] relative">
+    <div className={`w-full min-h-screen ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} relative`}>
       <Navbar />
       <div className="w-full flex items-center justify-center px-4 pt-20 pb-10">
-        <div className="flex flex-col w-full max-w-[800px] text-white items-center">
+        <div className={`flex flex-col w-full max-w-[800px] ${darkMode ? "text-white" : "text-[#1a1a1a]"} items-center`}>
           <h3 className="text-4xl font-bold mb-10">Are You Hungry?</h3>
 
           <div className="w-full flex flex-col mb-6">
@@ -141,7 +142,7 @@ const App = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for a city..."
-              className="w-full text-white py-2 mb-4 bg-transparent border-b border-gray-500 focus:outline-none focus:border-white"
+              className={`w-full py-2 mb-4 bg-transparent border-b border-gray-500 focus:outline-none focus:border-white ${darkMode ? "text-white" : "text-[#1a1a1a]"}`}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
@@ -149,7 +150,7 @@ const App = () => {
           <div className="w-full flex flex-row gap-4 mb-6">
             <div className="flex-1">
               <select
-                className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
+                className={`w-full py-2 ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} border-b border-gray-500 focus:outline-none focus:border-white ${darkMode ? "text-white" : "text-[#1a1a1a]"}`}
                 value={starFilter}
                 onChange={(e) => setStarFilter(e.target.value)}
               >
@@ -164,7 +165,7 @@ const App = () => {
 
             <div className="flex-1">
               <select
-                className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
+                className={`w-full py-2 ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} border-b border-gray-500 focus:outline-none focus:border-white ${darkMode ? "text-white" : "text-[#1a1a1a]"}`}
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
@@ -181,7 +182,7 @@ const App = () => {
             <button
               onClick={() => handleSearch()}
               disabled={loading}
-              className="w-full bg-transparent border border-white text-white my-2 font-semibold rounded-md p-4 text-center flex items-center justify-center cursor-pointer hover:bg-white hover:text-[#1a1a1a] transition-colors"
+              className={`w-full bg-transparent border ${darkMode ? "border-white text-white" : "border-[#1a1a1a] text-[#1a1a1a]"} my-2 font-semibold rounded-md p-4 text-center flex items-center justify-center cursor-pointer ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
             >
               {loading ? "Searching..." : "Search"}
             </button>
@@ -203,7 +204,7 @@ const App = () => {
                       (fav) => fav.name === restaurant.name
                     )}
                     onToggleFavorite={toggleFavorite}
-                    darkMode={true}
+                    darkMode={darkMode}
                   />
                 ))}
               </div>
@@ -213,7 +214,7 @@ const App = () => {
                 <button
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
-                  className="bg-transparent border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1a1a1a] transition-colors"
+                  className={`bg-transparent border ${darkMode ? "border-white text-white" : "border-[#1a1a1a] text-[#1a1a1a]"} px-4 py-2 rounded-md ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
                 >
                   Previous
                 </button>
@@ -223,7 +224,7 @@ const App = () => {
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage * resultsPerPage >= totalResults}
-                  className="bg-transparent border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1a1a1a] transition-colors"
+                  className={`bg-transparent border ${darkMode ? "border-white text-white" : "border-[#1a1a1a] text-[#1a1a1a]"} px-4 py-2 rounded-md ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
                 >
                   Next
                 </button>

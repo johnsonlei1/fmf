@@ -29,22 +29,28 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
     <div
       className={`border rounded-md p-4 relative ${
         darkMode
-          ? "border-gray-700 hover:border-white"
-          : "border-gray-300 hover:border-black"
+          ? "border-gray-700 hover:border-white text-white" // Light text in dark mode
+          : "border-gray-300 hover:border-black text-black" // Dark text in light mode
       } transition-colors`}
     >
       <h5 className="text-xl font-bold">{restaurant.name}</h5>
       <div className="flex items-center mt-2">
         <span className="text-yellow-400">{restaurant.stars} ★</span>
-        <span className="ml-2 text-gray-400">
+        <span
+          className={`ml-2 ${
+            darkMode ? "text-gray-400" : "text-gray-600"
+          }`}
+        >
           ({restaurant.review_count} reviews)
         </span>
       </div>
-      <p className="mt-2 text-gray-300">
+      <p className={`mt-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
         {restaurant.address}, {restaurant.city}, {restaurant.state}{" "}
         {restaurant.postal_code}
       </p>
-      <p className="mt-2 text-gray-400">{restaurant.categories}</p>
+      <p className={`mt-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+        {restaurant.categories}
+      </p>
 
       {/* Heart Icon */}
       <div

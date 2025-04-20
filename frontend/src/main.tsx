@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.tsx";
 import Login from "./Login.tsx";
 import Signup from "./Signup.tsx";
+import Profile from "./Profile.tsx";
 import {
   BrowserRouter as Router,
   Routes,
@@ -11,13 +12,8 @@ import {
   Navigate,
 } from "react-router-dom";
 import { initializeApp } from "firebase/app";
-import Profile from "./Profile.tsx";
-// Import the functions you need from the SDKs you need
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { ThemeProvider } from "./Context/ThemeContext.tsx"; // Import ThemeProvider
 
-// Your web app's Firebase configuration
-// Replace the hardcoded firebaseConfig with:
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -29,17 +25,20 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/Login" />} />
-        <Route path="/Signup" element={<Signup />} />
-        <Route path="/Login" element={<Login />} />
-        <Route path="/Profile" element={<Profile />} />
-        <Route path="/app" element={<App />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to="/Login" />} />
+          <Route path="/Signup" element={<Signup />} />
+          <Route path="/Login" element={<Login />} />
+          <Route path="/Profile" element={<Profile />} />
+          <Route path="/app" element={<App />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   </StrictMode>
 );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTheme } from "./context/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -18,8 +19,8 @@ interface Restaurant {
 }
 
 function Profile() {
+  const { darkMode, toggleDarkMode } = useTheme();
   const [activeTab, setActiveTab] = useState("settings");
-  const [darkMode, setDarkMode] = useState(true);
   const [favorites, setFavorites] = useState<Restaurant[]>([]);
   const [userLoaded, setUserLoaded] = useState(false);
   const navigate = useNavigate();
@@ -137,7 +138,7 @@ function Profile() {
               <div className="flex items-center justify-between">
                 <span>Dark Mode</span>
                 <button
-                  onClick={() => setDarkMode(!darkMode)}
+                  onClick={toggleDarkMode}
                   className={`px-4 py-2 rounded ${
                     darkMode ? "bg-white text-black" : "bg-black text-white"
                   }`}
@@ -180,7 +181,7 @@ function Profile() {
       <div className="absolute bottom-5 right-5 flex gap-4">
         <button
           onClick={() => navigate("/app")}
-          className="bg-transparent border border-white text-white font-semibold rounded-md px-4 py-2 text-center cursor-pointer hover:bg-white hover:text-[#1a1a1a] transition-colors"
+          className={`${darkMode ? "bg-[#1a1a1a] border border-white text-white" : "bg-white border border-[#1a1a1a] text-[#1a1a1a]"} font-semibold rounded-md px-4 py-2 text-center cursor-pointer ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
         >
           Home
         </button>
