@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
+import RestaurantCard from "./components/RestaurantCard";
+import { useTheme } from "./Context/ThemeContext";
+// Firebase imports
+import { db, auth } from "./firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface Restaurant {
   name: string;
@@ -14,6 +20,7 @@ interface Restaurant {
 }
 
 const App = () => {
+  const { darkMode } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [starFilter, setStarFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -21,9 +28,64 @@ const App = () => {
   const [favorites, setFavorites] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1); // Track the current page
-  const [totalResults, setTotalResults] = useState(0); // Track total results
-  const resultsPerPage = 20; // Number of results per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const resultsPerPage = 20;
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setFavorites(data.favorites || []);
+      } else {
+        await setDoc(userRef, { favorites: [] });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const toggleFavorite = async (restaurant: Restaurant) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please log in to favorite restaurants.");
+      return;
+    }
+
+    const userRef = doc(db, "users", user.uid);
+
+    setFavorites((prevFavorites) => {
+      const isFavorited = prevFavorites.some(
+        (fav) => fav.name === restaurant.name
+      );
+      let updatedFavorites;
+
+      if (isFavorited) {
+        updatedFavorites = prevFavorites.filter(
+          (fav) => fav.name !== restaurant.name
+        );
+      } else {
+        updatedFavorites = [...prevFavorites, restaurant];
+      }
+
+      const serializedFavorites = updatedFavorites.map(
+        ({ name, address, city, state, postal_code, stars, review_count, categories, hours }) => ({
+          name, address, city, state, postal_code, stars, review_count, categories, hours
+        })
+      );
+
+      setDoc(userRef, { favorites: serializedFavorites }, { merge: true }).catch((err) => {
+        console.error("❌ Failed to sync favorites:", err);
+      });
+
+      return updatedFavorites;
+    });
+  };
 
   const handleSearch = async (page = 1) => {
     if (!searchTerm.trim()) {
@@ -55,19 +117,6 @@ const App = () => {
     }
   };
 
-  const toggleFavorite = (restaurant: Restaurant) => {
-    setFavorites((prevFavorites) => {
-      const isFavorited = prevFavorites.some((fav) => fav.name === restaurant.name);
-      if (isFavorited) {
-        // Remove from favorites
-        return prevFavorites.filter((fav) => fav.name !== restaurant.name);
-      } else {
-        // Add to favorites
-        return [...prevFavorites, restaurant];
-      }
-    });
-  };
-
   const handleNextPage = () => {
     if (currentPage * resultsPerPage < totalResults) {
       handleSearch(currentPage + 1);
@@ -81,10 +130,10 @@ const App = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#1a1a1a] relative">
+    <div className={`w-full min-h-screen ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} relative`}>
       <Navbar />
       <div className="w-full flex items-center justify-center px-4 pt-20 pb-10">
-        <div className="flex flex-col w-full max-w-[800px] text-white items-center">
+        <div className={`flex flex-col w-full max-w-[800px] ${darkMode ? "text-white" : "text-[#1a1a1a]"} items-center`}>
           <h3 className="text-4xl font-bold mb-10">Are You Hungry?</h3>
 
           <div className="w-full flex flex-col mb-6">
@@ -93,50 +142,47 @@ const App = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for a city..."
-              className="w-full text-white py-2 mb-4 bg-transparent border-b border-gray-500 focus:outline-none focus:border-white"
+              className={`w-full py-2 mb-4 bg-transparent border-b border-gray-500 focus:outline-none ${darkMode ? "focus:border-white text-white" : "focus:border-[#1a1a1a] text-[#1a1a1a]"}`}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
+
           <div className="w-full flex flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <select
+                className={`w-full py-2 ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} border-b border-gray-500 focus:outline-none focus:border-white ${darkMode ? "text-white" : "text-[#1a1a1a]"}`}
+                value={starFilter}
+                onChange={(e) => setStarFilter(e.target.value)}
+              >
+                <option value="">All Ratings</option>
+                <option value="1">★ and up</option>
+                <option value="2">★★ and up</option>
+                <option value="3">★★★ and up</option>
+                <option value="4">★★★★ and up</option>
+                <option value="5">★★★★★ only</option>
+              </select>
+            </div>
 
-          <div className="flex-1">
-            <select
-              className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
-              value={starFilter}
-              onChange={(e) => setStarFilter(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            >
-              <option value="">All Ratings</option>
-              <option value={1}>★ and up</option>
-              <option value={2}>★★ and up</option>
-              <option value={3}>★★★ and up</option>
-              <option value={4}>★★★★ and up</option>
-              <option value={5}>★★★★★ only</option>
-            </select>
+            <div className="flex-1">
+              <select
+                className={`w-full py-2 ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} border-b border-gray-500 focus:outline-none focus:border-white ${darkMode ? "text-white" : "text-[#1a1a1a]"}`}
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                <option value="Italian">Italian</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Mexican">Mexican</option>
+                <option value="Indian">Indian</option>
+              </select>
+            </div>
           </div>
 
-          <div className="flex-1">
-            <select
-              className="w-full text-white py-2 bg-[#1a1a1a] border-b border-gray-500 focus:outline-none focus:border-white"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            >
-              <option value="">All Categories</option>
-              <option value="Italian">Italian</option>
-              <option value="Chinese">Chinese</option>
-              <option value="Mexican">Mexican</option>
-              <option value="Indian">Indian</option>
-            </select>
-          </div>
-        </div>
-
-          
           <div className="w-full flex flex-col mb-4">
             <button
               onClick={() => handleSearch()}
               disabled={loading}
-              className="w-full bg-transparent border border-white text-white my-2 font-semibold rounded-md p-4 text-center flex items-center justify-center cursor-pointer hover:bg-white hover:text-[#1a1a1a] transition-colors"
+              className={`w-full bg-transparent border ${darkMode ? "border-white text-white" : "border-[#1a1a1a] text-[#1a1a1a]"} my-2 font-semibold rounded-md p-4 text-center flex items-center justify-center cursor-pointer ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
             >
               {loading ? "Searching..." : "Search"}
             </button>
@@ -151,39 +197,15 @@ const App = () => {
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {restaurants.map((restaurant, index) => (
-                  <div
+                  <RestaurantCard
                     key={index}
-                    className="border border-gray-700 rounded-md p-4 hover:border-white transition-colors relative"
-                  >
-                    <h5 className="text-xl font-bold">{restaurant.name}</h5>
-                    <div className="flex items-center mt-2">
-                      <span className="text-yellow-400">
-                        {restaurant.stars} ★
-                      </span>
-                      <span className="ml-2 text-gray-400">
-                        ({restaurant.review_count} reviews)
-                      </span>
-                    </div>
-                    <p className="mt-2 text-gray-300">
-                      {restaurant.address}, {restaurant.city},{" "}
-                      {restaurant.state} {restaurant.postal_code}
-                    </p>
-                    <p className="mt-2 text-gray-400">
-                      {restaurant.categories}
-                    </p>
-
-                    {/* Heart Icon */}
-                    <div
-                      onClick={() => toggleFavorite(restaurant)}
-                      className="absolute top-4 right-4 cursor-pointer"
-                    >
-                      {favorites.some((fav) => fav.name === restaurant.name) ? (
-                        <span className="text-red-500 text-2xl">❤️</span> // Filled heart
-                      ) : (
-                        <span className="text-gray-500 text-2xl">🤍</span> // Hollow heart
-                      )}
-                    </div>
-                  </div>
+                    restaurant={restaurant}
+                    isFavorite={favorites.some(
+                      (fav) => fav.name === restaurant.name
+                    )}
+                    onToggleFavorite={toggleFavorite}
+                    darkMode={darkMode}
+                  />
                 ))}
               </div>
 
@@ -192,7 +214,7 @@ const App = () => {
                 <button
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
-                  className="bg-transparent border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1a1a1a] transition-colors"
+                  className={`bg-transparent border ${darkMode ? "border-white text-white" : "border-[#1a1a1a] text-[#1a1a1a]"} px-4 py-2 rounded-md ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
                 >
                   Previous
                 </button>
@@ -202,7 +224,7 @@ const App = () => {
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage * resultsPerPage >= totalResults}
-                  className="bg-transparent border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1a1a1a] transition-colors"
+                  className={`bg-transparent border ${darkMode ? "border-white text-white" : "border-[#1a1a1a] text-[#1a1a1a]"} px-4 py-2 rounded-md ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
                 >
                   Next
                 </button>

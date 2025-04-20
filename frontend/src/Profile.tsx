@@ -1,38 +1,93 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "./context/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { db, auth } from "./firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import RestaurantCard from "./components/RestaurantCard";
+
+interface Restaurant {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  stars: number;
+  review_count: number;
+  categories: string;
+  hours?: string;
+}
 
 function Profile() {
-  const [activeTab, setActiveTab] = useState("settings"); // Track active tab
-  const [darkMode, setDarkMode] = useState(true); // Track dark/light mode
+  const { darkMode, toggleDarkMode } = useTheme();
+  const [activeTab, setActiveTab] = useState("settings");
+  const [favorites, setFavorites] = useState<Restaurant[]>([]);
+  const [userLoaded, setUserLoaded] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data && data.favorites) {
+          setFavorites(data.favorites);
+        }
+      }
+
+      setUserLoaded(true);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const handleLogout = () => {
-    // Perform logout logic here (e.g., clearing tokens)
-    navigate("/Login"); // Redirect to login page
+    navigate("/Login");
   };
 
-  const favorites = [
-    {
-      name: "Favorite Restaurant 1",
-      address: "123 Main St",
-      city: "City",
-      state: "State",
-      postal_code: "12345",
-      stars: 4.5,
-      review_count: 120,
-      categories: "Italian, Pizza",
-    },
-    {
-      name: "Favorite Restaurant 2",
-      address: "456 Elm St",
-      city: "City",
-      state: "State",
-      postal_code: "67890",
-      stars: 4.0,
-      review_count: 80,
-      categories: "Mexican, Tacos",
-    },
-  ];
+  const toggleFavorite = async (restaurant: Restaurant) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please log in to manage favorites.");
+      return;
+    }
+
+    const userRef = doc(db, "users", user.uid);
+
+    setFavorites((prevFavorites) => {
+      const isFavorited = prevFavorites.some(
+        (fav) => fav.name === restaurant.name
+      );
+      let updatedFavorites;
+
+      if (isFavorited) {
+        // Remove from favorites
+        updatedFavorites = prevFavorites.filter(
+          (fav) => fav.name !== restaurant.name
+        );
+      } else {
+        // Add to favorites (not needed in this case, but keeping for consistency)
+        updatedFavorites = [...prevFavorites, restaurant];
+      }
+
+      // Update Firestore
+      const serializedFavorites = updatedFavorites.map(
+        ({ name, address, city, state, postal_code, stars, review_count, categories, hours }) => ({
+          name, address, city, state, postal_code, stars, review_count, categories, hours
+        })
+      );
+
+      setDoc(userRef, { favorites: serializedFavorites }, { merge: true }).catch((err) => {
+        console.error("❌ Failed to sync favorites:", err);
+      });
+
+      return updatedFavorites;
+    });
+  };
 
   return (
     <div
@@ -40,7 +95,6 @@ function Profile() {
         darkMode ? "bg-[#1a1a1a]" : "bg-white"
       } relative`}
     >
-      {/* <Navbar /> */}
       <div className="flex h-full">
         {/* Sidebar */}
         <div
@@ -73,7 +127,7 @@ function Profile() {
         </div>
 
         {/* Main Content */}
-        <div className="w-3/4 h-full p-6">
+        <div className="w-3/4 h-full p-6 overflow-y-auto">
           {activeTab === "settings" && (
             <div
               className={`p-6 rounded-lg ${
@@ -84,11 +138,9 @@ function Profile() {
               <div className="flex items-center justify-between">
                 <span>Dark Mode</span>
                 <button
-                  onClick={() => setDarkMode(!darkMode)}
+                  onClick={toggleDarkMode}
                   className={`px-4 py-2 rounded ${
-                    darkMode
-                      ? "bg-white text-black"
-                      : "bg-black text-white"
+                    darkMode ? "bg-white text-black" : "bg-black text-white"
                   }`}
                 >
                   {darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -99,50 +151,40 @@ function Profile() {
 
           {activeTab === "favorites" && (
             <div>
-              <h2 className="text-2xl font-bold mb-4 text-white">
-                Favorites
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {favorites.map((favorite, index) => (
-                  <div
-                    key={index}
-                    className={`border rounded-md p-4 ${
-                      darkMode
-                        ? "border-gray-700 hover:border-white"
-                        : "border-gray-300 hover:border-black"
-                    } transition-colors`}
-                  >
-                    <h5 className="text-xl font-bold">{favorite.name}</h5>
-                    <div className="flex items-center mt-2">
-                      <span className="text-yellow-400">
-                        {favorite.stars} ★
-                      </span>
-                      <span className="ml-2 text-gray-400">
-                        ({favorite.review_count} reviews)
-                      </span>
-                    </div>
-                    <p className="mt-2 text-gray-300">
-                      {favorite.address}, {favorite.city}, {favorite.state}{" "}
-                      {favorite.postal_code}
-                    </p>
-                    <p className="mt-2 text-gray-400">{favorite.categories}</p>
-                  </div>
-                ))}
-              </div>
+              <h2 className="text-2xl font-bold mb-4 text-white">Favorites</h2>
+
+              {!userLoaded ? (
+                <p className="text-gray-400">Loading your favorites...</p>
+              ) : favorites.length === 0 ? (
+                <p className="text-gray-400">
+                  You haven’t saved any favorites yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {favorites.map((fav, idx) => (
+                    <RestaurantCard
+                      key={idx}
+                      restaurant={fav}
+                      isFavorite={true} // Always true for favorites
+                      onToggleFavorite={toggleFavorite}
+                      darkMode={darkMode}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Home and Logout Button */}
+      {/* Home + Logout */}
       <div className="absolute bottom-5 right-5 flex gap-4">
         <button
-          onClick={() => navigate("/app")} // Assuming Home navigates to "/"
-          className="bg-transparent border border-white text-white font-semibold rounded-md px-4 py-2 text-center cursor-pointer hover:bg-white hover:text-[#1a1a1a] transition-colors"
+          onClick={() => navigate("/app")}
+          className={`${darkMode ? "bg-[#1a1a1a] border border-white text-white" : "bg-white border border-[#1a1a1a] text-[#1a1a1a]"} font-semibold rounded-md px-4 py-2 text-center cursor-pointer ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
         >
           Home
         </button>
-
         <button
           onClick={handleLogout}
           className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
