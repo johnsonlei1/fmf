@@ -153,17 +153,13 @@ const App = () => {
             </div>
 
             <div className="flex-1">
-              <select
-                className={`w-full py-2 ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} border-b border-gray-500 focus:outline-none focus:border-white ${darkMode ? "text-white" : "text-[#1a1a1a]"}`}
+              <input
+                type="text"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="">All Categories</option>
-                <option value="Italian">Italian</option>
-                <option value="Chinese">Chinese</option>
-                <option value="Mexican">Mexican</option>
-                <option value="Indian">Indian</option>
-              </select>
+                placeholder="Filter by category (e.g., sushi, tacos, vegan)"
+                className={`w-full py-2 bg-transparent border-b border-gray-500 focus:outline-none ${darkMode ? "focus:border-white text-white" : "focus:border-[#1a1a1a] text-[#1a1a1a]"}`}
+              />
             </div>
           </div>
 
