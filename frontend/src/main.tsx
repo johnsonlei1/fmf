@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import Login from "./Login.tsx";
 import Signup from "./Signup.tsx";
 import Profile from "./Profile.tsx";
+import Donation from "./Donation.tsx";
 import {
   BrowserRouter as Router,
   Routes,
@@ -35,6 +36,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/Signup" element={<Signup />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/Profile" element={<Profile />} />
+          <Route path="/Donation" element={<Donation />} />
           <Route path="/app" element={<App />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

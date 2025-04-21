@@ -17,9 +17,23 @@ function Navbar() {
         <div className="space-x-2.5">
           <Link
             to="/Profile"
-            className={`${darkMode ? "bg-[#1a1a1a] border border-white text-white" : "bg-white border border-[#1a1a1a] text-[#1a1a1a]"} font-semibold rounded-md px-4 py-2 text-center cursor-pointer ${darkMode ? "hover:bg-white hover:text-[#1a1a1a]" : "hover:bg-[#1a1a1a] hover:text-white"} transition-colors`}
+            className={`${
+              darkMode
+                ? "bg-[#1a1a1a] border border-white text-white"
+                : "bg-white border border-[#1a1a1a] text-[#1a1a1a]"
+            } font-semibold rounded-md px-4 py-2 text-center cursor-pointer ${
+              darkMode
+                ? "hover:bg-white hover:text-[#1a1a1a]"
+                : "hover:bg-[#1a1a1a] hover:text-white"
+            } transition-colors`}
           >
             Profile
+          </Link>
+          <Link
+            to="/Donation"
+            className="bg-transparent border border-white text-white font-semibold rounded-md px-4 py-2 text-center cursor-pointer hover:bg-white hover:text-[#1a1a1a] transition-colors"
+          >
+            Donation
           </Link>
         </div>
       </div>
