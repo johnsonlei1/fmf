@@ -65,16 +65,13 @@ function Profile() {
       let updatedFavorites;
 
       if (isFavorited) {
-        // Remove from favorites
         updatedFavorites = prevFavorites.filter(
           (fav) => fav.name !== restaurant.name
         );
       } else {
-        // Add to favorites (not needed in this case, but keeping for consistency)
         updatedFavorites = [...prevFavorites, restaurant];
       }
 
-      // Update Firestore
       const serializedFavorites = updatedFavorites.map(
         ({ name, address, city, state, postal_code, stars, review_count, categories, hours }) => ({
           name, address, city, state, postal_code, stars, review_count, categories, hours
@@ -90,24 +87,14 @@ function Profile() {
   };
 
   return (
-    <div
-      className={`w-full h-screen ${
-        darkMode ? "bg-[#1a1a1a]" : "bg-white"
-      } relative`}
-    >
+    <div className={`w-full h-screen ${darkMode ? "bg-[#1a1a1a]" : "bg-white"} relative`}>
       <div className="flex h-full">
         {/* Sidebar */}
-        <div
-          className={`w-1/4 h-full ${
-            darkMode ? "bg-[#282c34]" : "bg-gray-200"
-          } p-4`}
-        >
+        <div className={`w-1/4 h-full ${darkMode ? "bg-[#282c34]" : "bg-gray-200"} p-4`}>
           <ul className="space-y-4">
             <li
               className={`cursor-pointer p-2 rounded ${
-                activeTab === "settings"
-                  ? "bg-[#282c34] text-white"
-                  : "text-gray-400"
+                activeTab === "settings" ? "bg-[#282c34] text-white" : "text-gray-400"
               }`}
               onClick={() => setActiveTab("settings")}
             >
@@ -115,9 +102,7 @@ function Profile() {
             </li>
             <li
               className={`cursor-pointer p-2 rounded ${
-                activeTab === "favorites"
-                  ? "bg-[#282c34] text-white"
-                  : "text-gray-400"
+                activeTab === "favorites" ? "bg-[#282c34] text-white" : "text-gray-400"
               }`}
               onClick={() => setActiveTab("favorites")}
             >
@@ -156,21 +141,39 @@ function Profile() {
               {!userLoaded ? (
                 <p className="text-gray-400">Loading your favorites...</p>
               ) : favorites.length === 0 ? (
-                <p className="text-gray-400">
-                  You haven’t saved any favorites yet.
-                </p>
+                <p className="text-gray-400">You haven’t saved any favorites yet.</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {favorites.map((fav, idx) => (
-                    <RestaurantCard
-                      key={idx}
-                      restaurant={fav}
-                      isFavorite={true} // Always true for favorites
-                      onToggleFavorite={toggleFavorite}
-                      darkMode={darkMode}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {favorites.map((fav, idx) => (
+                      <RestaurantCard
+                        key={idx}
+                        restaurant={fav}
+                        isFavorite={true}
+                        onToggleFavorite={toggleFavorite}
+                        darkMode={darkMode}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="mt-6">
+                    <a
+                      href={`mailto:?subject=My Favorite Restaurants&body=${encodeURIComponent(
+                        favorites
+                          .map(
+                            (fav, i) =>
+                              `${i + 1}. ${fav.name} (${fav.stars} ★)\n${fav.address}, ${fav.city}, ${fav.state} ${fav.postal_code}\nCategories: ${fav.categories}\n\n`
+                          )
+                          .join("")
+                      )}`}
+                      className={`${
+                        darkMode ? "text-blue-400" : "text-blue-600"
+                      } underline font-semibold`}
+                    >
+                      📤 Share My Favorites via Email
+                    </a>
+                  </div>
+                </>
               )}
             </div>
           )}
