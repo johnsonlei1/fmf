@@ -11,6 +11,7 @@ import { Restaurant } from "./components/RestaurantCard";
 const App = () => {
   const { darkMode } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
+  const [cityOptions, setCityOptions] = useState<string[]>([]);
   const [starFilter, setStarFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
@@ -41,10 +42,17 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    // Load category options from backend
     fetch("http://localhost:5000/api/categories")
       .then((res) => res.json())
       .then((data) => setCategoryOptions(data))
-      .catch((err) => console.error("Failed to load categories", err));
+      .catch((err) => console.error("❌ Failed to load categories", err));
+    
+    // Load city options from backend
+    fetch("http://localhost:5000/api/cities")
+      .then((res) => res.json())
+      .then((data) => setCityOptions(data))
+      .catch((err) => console.error("❌ Failed to load cities", err));
   }, []);
 
   const toggleFavorite = async (restaurant: Restaurant) => {
@@ -135,6 +143,7 @@ const App = () => {
 
           <div className="w-full flex flex-col mb-6">
             <input
+              list="city-suggestions"
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -142,6 +151,11 @@ const App = () => {
               className={`w-full py-2 mb-4 bg-transparent border-b border-gray-500 focus:outline-none ${darkMode ? "focus:border-white text-white" : "focus:border-[#1a1a1a] text-[#1a1a1a]"}`}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             />
+            <datalist id="city-suggestions">
+              {cityOptions.map((city, index) => (
+                <option key={index} value={city} />
+              ))}
+            </datalist>
           </div>
 
           <div className="w-full flex flex-row gap-4 mb-6">

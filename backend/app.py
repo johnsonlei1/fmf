@@ -27,6 +27,16 @@ def get_unique_categories():
                 categories.add(clean)
     return jsonify(sorted(categories))
 
+@app.route('/api/cities', methods=['GET'])
+def get_unique_cities():
+    data = read_csv_data('food.csv')
+    cities = set()
+    for item in data:
+        city = item.get('city', '').strip().lower()
+        if city:
+            cities.add(city)
+    return jsonify(sorted(cities))
+
 # API endpoint to get all data from CSV
 @app.route('/api/data', methods=['GET'])
 def get_data():
