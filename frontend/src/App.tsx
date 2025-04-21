@@ -13,6 +13,7 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [starFilter, setStarFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [favorites, setFavorites] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,13 @@ const App = () => {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/categories")
+      .then((res) => res.json())
+      .then((data) => setCategoryOptions(data))
+      .catch((err) => console.error("Failed to load categories", err));
   }, []);
 
   const toggleFavorite = async (restaurant: Restaurant) => {
@@ -154,12 +162,18 @@ const App = () => {
 
             <div className="flex-1">
               <input
+                list="category-suggestions"
                 type="text"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 placeholder="Filter by category (e.g., sushi, tacos, vegan)"
                 className={`w-full py-2 bg-transparent border-b border-gray-500 focus:outline-none ${darkMode ? "focus:border-white text-white" : "focus:border-[#1a1a1a] text-[#1a1a1a]"}`}
               />
+              <datalist id="category-suggestions">
+                {categoryOptions.map((cat, idx) => (
+                  <option key={idx} value={cat} />
+                ))}
+              </datalist>
             </div>
           </div>
 
